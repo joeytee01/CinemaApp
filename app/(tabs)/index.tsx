@@ -1,74 +1,90 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, FlatList, Text, ActivityIndicator, Button, StyleSheet } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchMovies } from '../../redux/moviesAction';
+import { MovieCard } from '../../components/ui/MovieCard';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function MoviesScreen({ navigation }) {
+  const dispatch = useDispatch();
+  const { upcomingMovies, popularMovies, loading, error } = useSelector((state) => state.movies);
 
-export default function HomeScreen() {
+  useEffect(() => {
+    dispatch(fetchMovies('upcoming')); // Fetch upcoming movies
+    dispatch(fetchMovies('popular')); // Fetch popular movies
+  }, []);
+
+  if (loading) return <ActivityIndicator size="large" style={styles.loader} />;
+  if (error)
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Failed to fetch movies.</Text>
+        <Button title="Retry" onPress={() => {
+          dispatch(fetchMovies('upcoming'));
+          dispatch(fetchMovies('popular'));
+        }} />
+      </View>
+    );
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      {/* Section for Upcoming Movies */}
+      <Text style={styles.sectionTitle}>Upcoming Movies</Text>
+      <FlatList
+        data={upcomingMovies}
+        horizontal
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <MovieCard
+            movie={item}
+            onPress={() => navigation.navigate('MovieDetails', { id: item.id })}
+          />
+        )}
+        showsHorizontalScrollIndicator={false}
+      />
+
+      {/* Section for Popular Movies */}
+      <Text style={styles.sectionTitle}>Popular Movies</Text>
+      <FlatList
+        data={popularMovies}
+        horizontal
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <MovieCard
+            movie={item}
+            onPress={() => navigation.navigate('MovieDetails', { id: item.id })}
+          />
+        )}
+        showsHorizontalScrollIndicator={false}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    padding: 10,
+    backgroundColor: "white",
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginVertical: 10,
+    marginTop:40,
+  },
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  errorText: {
+    fontSize: 16,
+    color: 'red',
+    marginBottom: 10,
   },
 });
